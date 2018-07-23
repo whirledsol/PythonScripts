@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 Graphing
 
 Created on Wed Jun 26 22:22:00 2013
 
 @author: Will
-"""
+'''
 import numpy,scipy
 from collections import OrderedDict
 import matplotlib as matplotlib

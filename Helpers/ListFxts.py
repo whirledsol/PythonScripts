@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 List Functions
 Created on Sun Jul 07 14:23:47 2013
 @author: Will Rhodes
-"""
+'''
 
 import math,operator
 from collections import OrderedDict
 import itertools
 
-
-#utility method that can convert all in list to float without throwing exceptions
 def convertAllToFloat(lst):
+    '''
+    utility method that can convert all in list to float without throwing exceptions
+    '''
     fltLst = []
     if type(lst) == list:
         for each in lst:
@@ -24,20 +25,22 @@ def convertAllToFloat(lst):
     else:
         print lst,' is not a list'
         return lst
-    
-    
-#splits a list, l, into a list of lists with each sublist of size n    
+      
 def chunks(l, n):
+    '''
+    splits a list, l, into a list of lists with each sublist of size n  
+    '''
     newList = []
     
     for i in xrange(0, len(l), n):
         newList.append(l[i:i+n])
     return newList
         
-#gets the number of items in a list within the range 0-> limit in dSize chunks
-#returns: dictionary with x labels and y count
 def getNumPerRange(tempList,sampleSize = 50,dSize = None,upTo=False,returnList=False):
-    
+    '''
+    gets the number of items in a list within the range 0-> limit in dSize chunks
+    returns: dictionary with x labels and y count
+    '''
     if dSize is None:
         limit = max(tempList) 
         dSize = limit/sampleSize
@@ -59,8 +62,10 @@ def getNumPerRange(tempList,sampleSize = 50,dSize = None,upTo=False,returnList=F
         return returning.values()
     return returning
 
-# sorts a list by dynamic attribute name and parttions into dSize chunks
 def partitionByAttributeSize(mylist,attribute,dSize,maxVal=None):
+    '''
+    sorts a list by dynamic attribute name and parttions into dSize chunks
+    '''
     try:    
         getattr(mylist[0], attribute)
     except:
@@ -85,9 +90,11 @@ def partitionByAttributeSize(mylist,attribute,dSize,maxVal=None):
         returning[indexPlacement].append(each)
     return returning  
          
-#gets the number of items in a list within the range 0-> limit in dSize chunks
-#returns: dictionary with x labels and y count
 def getNumPerRange_v2(keys,tempList,upTo=False,returnList=True):
+    '''
+    gets the number of items in a list within the range 0-> limit in dSize chunks
+    returns: dictionary with x labels and y count
+    '''
     returning = OrderedDict()
     for i in xrange(1,len(keys)):
         temp = []
@@ -105,13 +112,14 @@ def getNumPerRange_v2(keys,tempList,upTo=False,returnList=True):
         return returning.values()
     else:
         return returning
-    
-    
-# Average Corropsonding Indices
-# Get the averages across multiple lists where they have the same index
-# e.g.: [[3,4],[5,6]] yields [4,5]
-# assumption: each sublist is of the same size    
+       
 def averageCorroIndices(listoflists):
+    '''
+    Average Corropsonding Indices
+    Get the averages across multiple lists where they have the same index
+    e.g.: [[3,4],[5,6]] yields [4,5]
+    assumption: each sublist is of the same size 
+    '''
     if type(listoflists[0]) != list:
         print "Not a list of lists"
         return None
@@ -128,14 +136,19 @@ def averageCorroIndices(listoflists):
     
     returning = [x/size for x in returning]
     return returning
-  
-# takes a list of lists and makes it one list      
+        
 def flatten(lst):
+    '''
+    takes a list of lists and makes it one list
+    '''
     #print lst
     return list(itertools.chain.from_iterable(lst))      
 
-# subtracts elements from the minor list from the major list and returns the listed result
 def subtractLists(major,minor):
+    '''
+    subtracts elements from the minor list
+    from the major list and returns the listed result
+    '''
     subtracted = []
     if len(minor)==0:
         return major
@@ -150,14 +163,18 @@ def subtractLists(major,minor):
             subtracted.append(each)
     return subtracted
         
-# returns the first item in a list or itterable
 def first(iterable, default=None):
-  for item in iterable:
-    return item
-  return default
+    '''
+    returns the first item in a list or itterable
+    '''
+    for item in iterable:
+        return item
+    return default
 
-# similar to list.index(item) but without the error, just returns -1
 def getIndex(mylist,obj):
+    '''
+    similar to list.index(item) but without the error, just returns -1
+    '''
     try:
         idx = mylist.index(obj)
         return idx
@@ -165,8 +182,10 @@ def getIndex(mylist,obj):
         #print e
         return -1
 
-# tests to see if the list is sorted numerically
 def is_sorted(lst):
+    '''
+    tests to see if the list is sorted numerically
+    '''
     it = iter(lst)
     try:
         prev = it.next()
@@ -178,11 +197,19 @@ def is_sorted(lst):
         prev = x
     return True 
 
-#normalizes a list of numbers
 def normalizeList(myList):
+    '''
+    normalizes a list of numbers
+    '''
     try:
         maxval = max(myList)
         return [float(x)/float(maxval) for x in myList]
     except:
         print "Can't normalize this list"
         return []
+
+def distinct(l):
+    '''
+    returns a list of distinct items
+    '''
+    return list(set(l))
