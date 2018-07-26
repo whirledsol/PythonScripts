@@ -20,10 +20,10 @@ def convertAllToFloat(lst):
             try:
                 fltLst.append(float(each))
             except:
-                print "problem with ",each
+                print("problem with ",each)
         return fltLst
     else:
-        print lst,' is not a list'
+        print(lst,' is not a list')
         return lst
       
 def chunks(l, n):
@@ -32,7 +32,7 @@ def chunks(l, n):
     '''
     newList = []
     
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         newList.append(l[i:i+n])
     return newList
         
@@ -59,7 +59,7 @@ def getNumPerRange(tempList,sampleSize = 50,dSize = None,upTo=False,returnList=F
         upperBound = upperBound+dSize
         lowerBound = lowerBound+dSize
     if returnList:
-        return returning.values()
+        return list(returning.values())
     return returning
 
 def partitionByAttributeSize(mylist,attribute,dSize,maxVal=None):
@@ -69,7 +69,7 @@ def partitionByAttributeSize(mylist,attribute,dSize,maxVal=None):
     try:    
         getattr(mylist[0], attribute)
     except:
-        print "Object does not have attribute, try again"
+        print("Object does not have attribute, try again")
         return None
     dSize = float(dSize)
     # sort first
@@ -81,7 +81,7 @@ def partitionByAttributeSize(mylist,attribute,dSize,maxVal=None):
         maxVal = float(max([getattr(each, attribute) for each in mylist]))
         
     maxIndex = int(math.ceil(maxVal/dSize))
-    print maxIndex    
+    print(maxIndex)    
     for count in range(maxIndex):
         returning.append([])
 
@@ -96,7 +96,7 @@ def getNumPerRange_v2(keys,tempList,upTo=False,returnList=True):
     returns: dictionary with x labels and y count
     '''
     returning = OrderedDict()
-    for i in xrange(1,len(keys)):
+    for i in range(1,len(keys)):
         temp = []
         for each in tempList:
             if upTo:
@@ -109,7 +109,7 @@ def getNumPerRange_v2(keys,tempList,upTo=False,returnList=True):
         returning[keys[i]] = len(temp)            
         
     if returnList:
-        return returning.values()
+        return list(returning.values())
     else:
         return returning
        
@@ -121,7 +121,7 @@ def averageCorroIndices(listoflists):
     assumption: each sublist is of the same size 
     '''
     if type(listoflists[0]) != list:
-        print "Not a list of lists"
+        print("Not a list of lists")
         return None
     size = len(listoflists)
     subListSize = len(listoflists[0])
@@ -188,7 +188,7 @@ def is_sorted(lst):
     '''
     it = iter(lst)
     try:
-        prev = it.next()
+        prev = next(it)
     except StopIteration:
         return True
     for x in it:
@@ -205,7 +205,7 @@ def normalizeList(myList):
         maxval = max(myList)
         return [float(x)/float(maxval) for x in myList]
     except:
-        print "Can't normalize this list"
+        print("Can't normalize this list")
         return []
 
 def distinct(l):

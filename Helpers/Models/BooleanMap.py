@@ -26,7 +26,7 @@ class BooleanMap:
                 #row x col or dec x ra
                 self.countMap[raPos,decPos] = self.countMap[raPos,decPos] +1
             else:
-                print "can't parse data into the map"
+                print("can't parse data into the map")
                 
     
     def inSurvey(self,ra,dec):

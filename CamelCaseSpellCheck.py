@@ -9,7 +9,7 @@ import sys, re, collections, enchant
 def CamelCaseSpellCheck(filepath = None, wordRegex="[A-Za-z0-9]+"):
     
 	if filepath is None:
-		print "Please supply a file name."
+		print("Please supply a file name.")
 		return
 
 	#we have a filename now
@@ -23,7 +23,7 @@ def CamelCaseSpellCheck(filepath = None, wordRegex="[A-Za-z0-9]+"):
 	spellcheck = enchant.Dict("en_US")
     
     #go through words and print out errors
-	print "\n\n##################  SPELLING ERRORS FOUND  #######################"
+	print("\n\n##################  SPELLING ERRORS FOUND  #######################")
 	for word in words:
     	#split up the word based on casing
 		segments = SplitOnCaseChange(word)
@@ -31,8 +31,8 @@ def CamelCaseSpellCheck(filepath = None, wordRegex="[A-Za-z0-9]+"):
 		for segment in segments:
     		#if it is not whitespace and is not spelled right, display it in a nicely formatted output
 			if len(segment) > 0 and not spellcheck.check(segment):
-				print "{0:<20s} {1:<10s} {2:<40s}".format(segment," in ", word)
-	print "##################################################################\n\n"
+				print("{0:<20s} {1:<10s} {2:<40s}".format(segment," in ", word))
+	print("##################################################################\n\n")
 
 #reads a file and returns all text as string
 def ReadFile(filepath):

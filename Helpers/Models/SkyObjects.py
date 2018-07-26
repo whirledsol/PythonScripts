@@ -28,16 +28,16 @@ class skyObject:
                 self.DEC = self.DEC + 360.0  
                 
         except Exception as e:
-            print e
+            print(e)
             try:
-                print "Problem importing item with RA=", self.RA
+                print("Problem importing item with RA=", self.RA)
             except:
-                print "Problem importing item"
+                print("Problem importing item")
         try:
             if len(params) > 3:
                 self.flux = float(params[3])
         except:
-            print "Error importing flux to object"
+            print("Error importing flux to object")
     
     def __eq__(self, other):
         return self.getElements() == other.getElements()      
@@ -69,12 +69,12 @@ class GalaxyCluster:
             
             self.clusterSize = float(data[9])
         except Exception as e:
-            print e         
+            print(e)         
             exit()
             try:
-                print "Problem importing cluster: " +  ", ".join(map(str, data))
+                print("Problem importing cluster: " +  ", ".join(map(str, data)))
             except:
-                print "Problem importing galaxy cluster: unknown"
+                print("Problem importing galaxy cluster: unknown")
  
        
         
@@ -114,9 +114,9 @@ class QSO:
             self.hasNeighbor = False
         except:
             try:
-                print "Problem importing QSO: " + str(data[0])
+                print("Problem importing QSO: " + str(data[0]))
             except:
-                print "Problem importing QSO: unknown"
+                print("Problem importing QSO: unknown")
 
         
     def sethasNeighbor(self,boolean):
@@ -187,7 +187,7 @@ class qsoCluster:
         if (len(self.angles) == len(self.projDisList)) and (len(self.projDisList) == len(self.dvList)) and (len(self.angles) == len(self.qsoClusterList)-1):
             return True
         else:
-            print "LENGTHS: "+str(len(self.dvList))+" "+str(len(self.angles)) + " " + str(len(self.projDisList))+ " " + str(len(self.qsoClusterList))
+            print("LENGTHS: "+str(len(self.dvList))+" "+str(len(self.angles)) + " " + str(len(self.projDisList))+ " " + str(len(self.qsoClusterList)))
             return False
             
     def getSize(self):
@@ -198,7 +198,7 @@ class qsoCluster:
         
     def toString(self):
         fString = ""
-        for i in xrange(0,len(self.qsoClusterList)):
+        for i in range(0,len(self.qsoClusterList)):
             
             fString = fString + self.qsoClusterList[i].toString()
             

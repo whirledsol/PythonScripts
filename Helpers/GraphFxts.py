@@ -10,15 +10,15 @@ import numpy,scipy
 from collections import OrderedDict
 import matplotlib as matplotlib
 import matplotlib.pyplot as plt
-from NumericalFxts import *
-from ListFxts import *
-from AstroFxts import *
-from Tkinter import Tk
-from tkFileDialog import askopenfilename
+from .NumericalFxts import *
+from .ListFxts import *
+from .AstroFxts import *
+from tkinter import Tk
+from tkinter.filedialog import askopenfilename
 try:
     from CorrelationFinder import getNumPerRange
 except ImportError:
-    print 'could not import getNumPerRange'
+    print('could not import getNumPerRange')
 
 
 
@@ -27,7 +27,7 @@ def parsePoints(filepath = None,returnValues=True):
     if filepath is None:
         #get the file
         Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-        filepath = askopenfilename(initialdir="C:\Users\Will\Dropbox\_MMA Research\Quasar Project\qsoProgram\\results\CSVSurveys") # show an "Open" dialog box and return the path to the selected file
+        filepath = askopenfilename(initialdir="C:\\Users\Will\Dropbox\_MMA Research\Quasar Project\qsoProgram\\results\CSVSurveys") # show an "Open" dialog box and return the path to the selected file
         #print(filepath)
         
         #get the data file
@@ -55,7 +55,7 @@ def parsePoints(filepath = None,returnValues=True):
                 iYs.append(row[4])
                 iErrors.append(row[5])
             except Exception as e:
-                print e
+                print(e)
 
 
         
@@ -139,7 +139,7 @@ def MultiScatterPlot(points,titles=[],xLabel= "x",yLabel= "y",title="",errorBars
     markers='oHv^<>8sp*hDdoHv^<>8sp*hDd'
     colors='rbcmykcmykbgrcmykcmykbgbgr'
     graphs = []
-    for i in xrange(0,len(points),2):
+    for i in range(0,len(points),2):
         m = markers[i:i+1]
         c = colors[i:i+1]
         try:
@@ -147,7 +147,7 @@ def MultiScatterPlot(points,titles=[],xLabel= "x",yLabel= "y",title="",errorBars
             #print errors
             graph = plot1.errorbar(points[i],points[i+1],yerr=errors,color=c,fmt='o')
         except Exception as e:
-            print e
+            print(e)
             graph = plot1.scatter(points[i],points[i+1],marker=m,color=c,s=30/(i+1))
         graphs.append(graph)
    
@@ -170,8 +170,8 @@ def dualBestFit(X1,Y1,X2,Y2,order=2,res = 100,sameGraph=True,title1="Pairs",titl
     
     bestFitEq1 = numpy.polyfit(X1, Y1, order)
     bestFitEq2 = numpy.polyfit(X2, Y2, order)
-    print bestFitEq1
-    print bestFitEq2
+    print(bestFitEq1)
+    print(bestFitEq2)
     
     
     func1 = numpy.poly1d(bestFitEq1)    
@@ -267,11 +267,11 @@ def dualHistogram(pairDistances,isolatedDistances,sameGraph=False,normalize = Fa
         pHisto = getNumPerRange(pairDistances,sampleSize=bins,upTo=True)
         iHisto = getNumPerRange(isolatedDistances,sampleSize=bins,upTo=True)
         if normalize:            
-            p = plot1.scatter(pHisto.keys(),normalizeList(pHisto.values()),c='r',s=5,lw=0)
-            i = plot1.scatter(iHisto.keys(),normalizeList(iHisto.values()),c='b',s=5,lw=0)
+            p = plot1.scatter(list(pHisto.keys()),normalizeList(list(pHisto.values())),c='r',s=5,lw=0)
+            i = plot1.scatter(list(iHisto.keys()),normalizeList(list(iHisto.values())),c='b',s=5,lw=0)
         else:
-            p = plot1.scatter(pHisto.keys(),pHisto.values(),c='r',s=4,lw=0)
-            i = plot1.scatter(iHisto.keys(),iHisto.values(),c='b',s=4,lw=0)
+            p = plot1.scatter(list(pHisto.keys()),list(pHisto.values()),c='r',s=4,lw=0)
+            i = plot1.scatter(list(iHisto.keys()),list(iHisto.values()),c='b',s=4,lw=0)
         plot1.legend([p,i],[title1,title2])
         plot1.set_ylabel(yLabel)
         plot1.set_xlabel(xLabel)
@@ -304,8 +304,8 @@ def dualHistogram(pairDistances,isolatedDistances,sameGraph=False,normalize = Fa
 def correlationGraphs(pairDistances,isolatedDistances,title1="Pairs",title2="Isolated",xLabel= "Distance"):
     
     #remove all bogus info from the read in lists
-    pairDistances = filter(None,pairDistances)
-    isolatedDistances = filter(None,isolatedDistances)
+    pairDistances = [_f for _f in pairDistances if _f]
+    isolatedDistances = [_f for _f in isolatedDistances if _f]
     #convert to floats
     pairDistances = list(map(float, pairDistances))
     isolatedDistances = list(map(float, isolatedDistances))
@@ -318,9 +318,9 @@ def correlationGraphs(pairDistances,isolatedDistances,title1="Pairs",title2="Iso
     fig = plt.figure()
     
     plot1 = fig.add_subplot(211)
-    ind = numpy.arange(len(pairsNumDisCorr.values()))
+    ind = numpy.arange(len(list(pairsNumDisCorr.values())))
     width=1.0
-    plot1.bar(ind, pairsNumDisCorr.values(), width, color='r')
+    plot1.bar(ind, list(pairsNumDisCorr.values()), width, color='r')
     #plot1.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(steps=2))
     plot1.set_ylabel('Number')
     plot1.set_xlabel(xLabel)
@@ -329,9 +329,9 @@ def correlationGraphs(pairDistances,isolatedDistances,title1="Pairs",title2="Iso
       
     
     plot2 = fig.add_subplot(212)
-    ind = numpy.arange(len(isoNumDisCorr.values()))
+    ind = numpy.arange(len(list(isoNumDisCorr.values())))
     width=1.0
-    plot2.bar(ind, isoNumDisCorr.values(), width, color='b')
+    plot2.bar(ind, list(isoNumDisCorr.values()), width, color='b')
     plot2.set_ylabel('Number')
     plot2.set_xlabel(xLabel)
     plot2.set_title(title2)
@@ -368,8 +368,8 @@ def correlationGraphs_Line(pairDistances,isolatedDistances,title1="Counts per Di
     dSize = limit/totalPoints 
     
     #remove all bogus info from the read in lists
-    pairDistances = filter(None,pairDistances)
-    isolatedDistances = filter(None,isolatedDistances)
+    pairDistances = [_f for _f in pairDistances if _f]
+    isolatedDistances = [_f for _f in isolatedDistances if _f]
     #convert to floats
     pairDistances = list(map(float, pairDistances))
     isolatedDistances = list(map(float, isolatedDistances))
@@ -379,8 +379,8 @@ def correlationGraphs_Line(pairDistances,isolatedDistances,title1="Counts per Di
     isoNumDisCorr = getNumPerRange(isolatedDistances)
  
     #plot both on one graph so NORMALIZE BOTH
-    pairsNumDisCorr = normalizeList(pairsNumDisCorr.values())
-    isoNumDisCorr = normalizeList(isoNumDisCorr.values())    
+    pairsNumDisCorr = normalizeList(list(pairsNumDisCorr.values()))
+    isoNumDisCorr = normalizeList(list(isoNumDisCorr.values()))    
     
     
     
@@ -406,8 +406,8 @@ def correlationGraphs_Line(pairDistances,isolatedDistances,title1="Counts per Di
 def plotBestFit(pairDistances,isolatedDistances,order=2,bins=30):
     
     #remove all bogus info from the read in lists
-    pairDistances = filter(None,pairDistances)
-    isolatedDistances = filter(None,isolatedDistances)
+    pairDistances = [_f for _f in pairDistances if _f]
+    isolatedDistances = [_f for _f in isolatedDistances if _f]
     #convert to floats
     pairDistances = list(map(float, pairDistances))
     isolatedDistances = list(map(float, isolatedDistances))
@@ -425,8 +425,8 @@ def plotBestFit(pairDistances,isolatedDistances,order=2,bins=30):
     x1 = numpy.linspace(0, len(pairsNumDisCorr), len(pairsNumDisCorr))
     x2 = numpy.linspace(0, len(isoNumDisCorr), len(isoNumDisCorr))
     
-    bestFitEq1 = numpy.polyfit(x1, pairsNumDisCorr.values(), order)
-    bestFitEq2 = numpy.polyfit(x2, isoNumDisCorr.values(), order)
+    bestFitEq1 = numpy.polyfit(x1, list(pairsNumDisCorr.values()), order)
+    bestFitEq2 = numpy.polyfit(x2, list(isoNumDisCorr.values()), order)
     
     func1 = numpy.poly1d(bestFitEq1)    
     func2 = numpy.poly1d(bestFitEq2)
@@ -555,8 +555,8 @@ def saveGraph(figure,name,l=30,w=20):
     try:
         figure.savefig(name)
     except Exception as e:
-        print e
-        print "Could not save image but moving on"
+        print(e)
+        print("Could not save image but moving on")
         
         
         

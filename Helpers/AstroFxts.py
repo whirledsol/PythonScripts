@@ -6,9 +6,9 @@ Includes all the mathematical functions used in the qso project from MMA Summer 
 import math,numpy,NumericalFxts
 
 try:
-    import Models.SkyObjects
+    from . import Models.SkyObjects
 except:
-    print "could not import skyObject"
+    print("could not import skyObject")
 
 
 
@@ -65,7 +65,7 @@ def getAngularSep(a1,d1,a2,d2):
         angularSep = math.acos(math.sin(toRad(d1))*math.sin(toRad(d2))  +  math.cos(toRad(d1)) * math.cos(toRad(d2))*math.cos(toRad(a1)-toRad(a2)))
         angularSep = toDegree(angularSep) #convert from radians, back to degrees
     except:
-        print "\n"+str(a1)+" "+str(d1)+" "+str(a2)+" "+str(d2)
+        print("\n"+str(a1)+" "+str(d1)+" "+str(a2)+" "+str(d2))
         angularSep = 9000 #high number so that it won't be factored in
    
     return angularSep    
@@ -139,7 +139,7 @@ def get3Ddistance(qso,eachCluster):
 
 #takes into account the actual distance between two extragalactic objects
 def get3Ddistance_v2(qso,eachCluster):
-    print "abandoned method"
+    print("abandoned method")
     return None
 #    z = abs(qso.z+eachCluster.z)/2
 #    R=1
@@ -157,7 +157,7 @@ def get3Ddistance_v2(qso,eachCluster):
 
 
 def compare(obj1,obj2):
-    print "abandoned method"
+    print("abandoned method")
     return None
 #    z = abs(obj1.z - obj2.z)/2
 #    

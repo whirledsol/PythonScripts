@@ -17,7 +17,7 @@ def getTextInBetween(string,beg,end):
             if string.find(end) >0:
                 cutAt = end
             else:
-                print "Done early"
+                print("Done early")
                 break
         extraction,string = (string[0:string.find(cutAt)],string[string.find(cutAt):len(string)])
         results.append(extraction)        

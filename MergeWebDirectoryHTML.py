@@ -5,7 +5,7 @@ merges the HTML from subdirectories on a root website and places them into a txt
 Created on Wed Oct 23 15:50:55 2013
 @author: Will Rhodes
 """
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 def start():
     root = "http://www.website.com/website/"
     subdirs = ["page1.html","page2.html","page3.html"]
@@ -22,10 +22,10 @@ def start():
     
 def readPage(url):
     try:
-        response = urllib2.urlopen(url)
+        response = urllib.request.urlopen(url)
         html = response.read()
     except:
-        print "ERROR downloading ",url
+        print("ERROR downloading ",url)
         exit()
     #print "HERE IT COMES"
     #print html
@@ -55,8 +55,8 @@ def writeMerged(contents,outputFilePath = "mergedhtml.html"):
             parsedPage = parsedPage[parsedPage.index(">")+1:len(parsedPage)]            
             merged += parsedPage
         except:
-            print "ERROR"
-            print i
+            print("ERROR")
+            print(i)
             
          
     merged +="</BODY></HTML>"    
