@@ -11,12 +11,13 @@ import numpy as np
 import re
 import pytesseract
 import imutils
-
+import os
+import time
 
 def start():
     parser = argparse.ArgumentParser(description='Take a directory of text/book photos and convert to a pdf')
 
-    parser.add_argument('-p','--pattern', type=str, help='file pattern', dest='pattern', default="*")
+    parser.add_argument('-p','--pattern', type=str, help='file pattern', dest='pattern', default="*.jpg")
 
     parser.add_argument('-d','--directory', required=True, type=str, help='the directory to use', dest='directory')
     
@@ -26,7 +27,10 @@ def start():
     #exit()
 
    
-    paths = Path(args.directory).glob(args.pattern)
+    paths = sorted(Path(args.directory).glob(args.pattern))
+
+    tempfolder = Path(args.directory).joinpath('bookscan_temp_{}'.format(time.time()))
+    os.mkdir(tempfolder.resolve()) 
 
     #itterate through paths
     for path in paths:
@@ -37,8 +41,8 @@ def start():
         img = rotate(img)
         img = confirmContrast(img)
         img = crop(img)
-
-        exit()
+        saveImg(img,tempfolder,path)
+        
 
 def decolor(img):
     #removes color but allows the img to have rgb elements going forward
@@ -220,7 +224,7 @@ def autoBounds(img):
     if y2 > ih:
         y2 = ih
 
-    return y1,y2,x1,x2
+    return [int(i) for i in [y1,y2,x1,x2]]
 
 def confirmBounds(img,y1,y2,x1,x2):
     
@@ -236,10 +240,11 @@ def confirmBounds(img,y1,y2,x1,x2):
         elif choice == chr(27): exit()
         else:
             y1,y2,x1,x2 = adjustBounds(choice,y1,y2,x1,x2)
+            
        
 
     cv2.destroyAllWindows()
-    return y1,y2,x1,x2
+    return [int(i) for i in [y1,y2,x1,x2]]
 
 def adjustBounds(c,y1,y2,x1,x2):
     #adjust the bounds
@@ -266,5 +271,11 @@ def crop(img):
     y1,y2,x1,x2 = confirmBounds(img,y1,y2,x1,x2)
     img = img[y1:y2, x1:x2]
     return img
+
+def saveImg(img,tempfolder,path):
+    #saves the img to file
+    savepath = tempfolder.joinpath(path.name).resolve()
+    print('\tSaving {} to {}'.format(type(img),savepath))
+    cv2.imwrite(str(savepath),img)
 
 if  __name__ =='__main__':start()
