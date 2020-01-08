@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Merge Web Directory to HTML
@@ -9,23 +10,26 @@ import urllib.request, urllib.error, urllib.parse
 from bs4 import BeautifulSoup
 
 def start():
-    root = "https://www.nifty.org/nifty/gay/sf-fantasy/aquata-cove/"
-    subdirs = ["epilogue-2","epilogue-1","aquata-cove-101","aquata-cove-100","aquata-cove-99","aquata-cove-98","aquata-cove-97","aquata-cove-96","aquata-cove-95","aquata-cove-94","aquata-cove-93","aquata-cove-92","aquata-cove-91","aquata-cove-90","aquata-cove-89","aquata-cove-88","aquata-cove-87","aquata-cove-86","aquata-cove-85","aquata-cove-84","aquata-cove-83","aquata-cove-82","aquata-cove-81","aquata-cove-80","aquata-cove-79","aquata-cove-78","aquata-cove-77","aquata-cove-76","aquata-cove-75","aquata-cove-74","aquata-cove-73","aquata-cove-72","aquata-cove-71","aquata-cove-70","aquata-cove-69","aquata-cove-68","aquata-cove-67","aquata-cove-66","aquata-cove-65","aquata-cove-64","aquata-cove-63","aquata-cove-62","aquata-cove-61","aquata-cove-60","aquata-cove-59","aquata-cove-58","aquata-cove-57","aquata-cove-56","aquata-cove-55","aquata-cove-54","aquata-cove-53","aquata-cove-52","aquata-cove-51","aquata-cove-50","aquata-cove-49","aquata-cove-48","aquata-cove-47","aquata-cove-46","aquata-cove-45","aquata-cove-44","aquata-cove-43","aquata-cove-42","aquata-cove-41","aquata-cove-40","aquata-cove-39","aquata-cove-38","aquata-cove-37","aquata-cove-36","aquata-cove-35","aquata-cove-34","aquata-cove-33","aquata-cove-32","aquata-cove-31","aquata-cove-30","aquata-cove-29","aquata-cove-28","aquata-cove-27","aquata-cove-26","aquata-cove-25","aquata-cove-24","aquata-cove-23","aquata-cove-22","aquata-cove-21","aquata-cove-20","aquata-cove-19","aquata-cove-18","aquata-cove-17","aquata-cove-16","aquata-cove-15","aquata-cove-14","aquata-cove-13","aquata-cove-12","aquata-cove-11","aquata-cove-10","aquata-cove-9","aquata-cove-8","aquata-cove-7","aquata-cove-6","aquata-cove-5","aquata-cove-4","aquata-cove-3","aquata-cove-2","aquata-cove-1"]
-    seperator = "<br><hl><br>"
-    filterSelector = "body"
+    root = "https://www.springfieldspringfield.co.uk/view_episode_scripts.php?tv-show=battlestar-galactica&"
+    subdirs = ['episode=s01e01','episode=s01e02','episode=s01e03','episode=s01e04','episode=s01e05','episode=s01e06','episode=s01e07','episode=s01e08','episode=s01e09','episode=s01e10','episode=s01e11','episode=s01e12','episode=s01e13','episode=s02e01','episode=s02e02','episode=s02e03','episode=s02e04','episode=s02e05','episode=s02e06','episode=s02e07','episode=s02e08','episode=s02e09','episode=s02e10','episode=s02e11','episode=s02e12','episode=s02e13','episode=s02e14','episode=s02e15','episode=s02e16','episode=s02e17','episode=s02e18','episode=s02e19','episode=s02e20','episode=s03e01','episode=s03e02','episode=s03e03','episode=s03e04','episode=s03e05','episode=s03e06','episode=s03e07','episode=s03e08','episode=s03e09','episode=s03e10','episode=s03e11','episode=s03e12','episode=s03e13','episode=s03e14','episode=s03e15','episode=s03e16','episode=s03e17','episode=s03e18','episode=s03e19','episode=s03e20','episode=s04e01','episode=s04e02','episode=s04e03','episode=s04e04','episode=s04e05','episode=s04e06','episode=s04e07','episode=s04e08','episode=s04e09','episode=s04e10','episode=s04e11','episode=s04e12','episode=s04e13','episode=s04e14','episode=s04e15','episode=s04e16','episode=s04e17','episode=s04e18','episode=s04e19']
+    seperator = "<br><br>"
+    filterSelector = ".scrolling-script-container"
     contents = []
-    outputFilePath = "mergedhtml.html"
+    outputFilePath = "battlestar_scripts.html"
 
     #subdirs = sorted(subdirs)
-    subdirs.reverse()
-    for each in subdirs:
+    #subdirs.reverse()
+
+    for i,each in enumerate(subdirs):
+        print('{0:.2f}%'.format(i/len(subdirs)*100))
         subdir = root+each
         content = readPage(subdir)
-        #content = filterContent(content,filterSelector,seperator)
+        content = filterContent(content,filterSelector,seperator)
         content = str(content)
         contents.append(content)
     writeMergedText(contents,outputFilePath,seperator) 
 
+'''
 def startFollow():
     url = "https://www.wattpad.com/569784435-a-forbidden-magic-chapter-1"
     followViaSelector = "a.next-part-link"
@@ -44,6 +48,8 @@ def startFollow():
 
     writeMergedText(contents,outputFilePath,seperator) 
 
+'''
+
 def readPage(url):
     try:
         req = urllib.request.Request(url, headers={'User-Agent' : "Magic Browser"}) 
@@ -52,8 +58,6 @@ def readPage(url):
     except Exception as e:
         print("ERROR downloading ",url, str(e))
         exit()
-    #print "HERE IT COMES"
-    #print html
     return html
     
 def findHref(html,selector):
@@ -67,7 +71,7 @@ def findHref(html,selector):
 def filterContent(html, selector, seperator):
     soup = BeautifulSoup(html, 'html.parser')
     filtered = soup.select(selector)
-    filtered = [x.get_text() for x in filtered]
+    filtered = [x.prettify() for x in filtered]
     return seperator.join(filtered)
     
 def writeMergedText(contents, outputFilePath, seperator):

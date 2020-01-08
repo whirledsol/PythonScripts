@@ -88,7 +88,7 @@ def searchDictionary(sorted_wordlist,letter_distribution,encrypted,word_count,id
     return matches
 
     
-anagrams('IAAGLTKYCNEALY O   REI YUDSDKSOI')
+print(bruteforce('IAAGLTKYCNEALY O   REI YUDSDKSOI'))
 #z = bruteforce('IAAGLTKYCNEALY O   REI YUDSDKSOI')
 #print(z)  
 
