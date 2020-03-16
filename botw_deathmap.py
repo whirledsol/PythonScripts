@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-example.py
+botw_deathmap.py
 @author: Will Rhodes
 
 """
-#import ListFxts
+import ListFxts
 
 def start():
 	print("Starting Program")
