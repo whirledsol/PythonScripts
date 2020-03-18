@@ -36,7 +36,9 @@ def start():
     PATH_BASE = '/home/will/Projects/COVID-19/csse_covid_19_data/csse_covid_19_time_series'
     OUTPUT_BASE = '/home/will/Projects/PythonUtilities/covid-sim/out/'
     PATH_TIME_CONFIRMED = os.path.join(PATH_BASE,'time_series_19-covid-Confirmed.csv')
+    PATH_TIME_RECOVERY = os.path.join(PATH_BASE,'time_series_19-covid-Recovered.csv')
     #custom_StatesPer(PATH_TIME_CONFIRMED)
+    custom_UsaRecovery(PATH_TIME_CONFIRMED,PATH_TIME_RECOVERY)
     custom_CountriesZero(PATH_TIME_CONFIRMED)
     custom_StatesPerMap(PATH_TIME_CONFIRMED)
     custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE)
@@ -55,20 +57,44 @@ def custom_StatesPer(path,highlight='Pennsylvania'):
     #ax.legend()
     plt.show()
 
-def custom_StatesPerMap(path):
+
+def custom_UsaRecovery(path,recoverypath):
     '''
     Shows percent of state vs percent of US over time
+    '''
+    _, ax = plt.subplots()
+    
+    x,y = parse_time(path,country='US')
+    rx,ry = parse_time(recoverypath,country='US')
+
+    date_first = x[y.index([i for i in y if i>0][0])]
+    ry = ry[rx.index(date_first):]
+    y = [i for i in y if i>0]
+    x = [i for i in x if i>=date_first]
+    
+    ax.set_title('US Cases and Recovery')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Incidents (Log Scale)')
+    ax.plot(x,y,label='Cases',c=numpy.random.rand(3,),linewidth=2)
+    ax.plot(x,ry,label='Recovery',c=numpy.random.rand(3,),linewidth=1)
+    ax.legend()
+    ax.set_yscale('log')
+    plt.show()
+
+def custom_StatesPerMap(path):
+    '''
+    Shows percent of state affected on map. Redder is bad.
     '''
     states = {}
     for state,population in STATE_POPULATIONS.items():
         _,y = parse_time(path,province=state)
         y = [i/population for i in y if i>0]
         states[state] = max(y) if len(y) > 0 else 0
-    us_map(states)
+    us_map(states,'Percentage of State Population Infected')
 
 def custom_StatesFitMap(path,OUTPUT_BASE, func=expo):
     '''
-    Shows percent of state vs percent of US over time
+    Fits data to curve, saves the best fit, displays base on map. Redder means high rate.
     '''
     states = {}
     timestamp = datetime.datetime.now().strftime('%Y%m%d')
@@ -88,7 +114,10 @@ def custom_StatesFitMap(path,OUTPUT_BASE, func=expo):
                     f.write('{},{},{}\n'.format(state,*params))
                 except:
                     raise ValueError('Could not find best fit for {}'.format(state))
-    us_map(states)
+
+    us_map(states,'Case Growth (Expotential Base)')
+
+
 
 def custom_CountriesZero(path,min_cases=100):
     '''
@@ -110,7 +139,7 @@ def custom_CountriesZero(path,min_cases=100):
 
     ax.set_xlabel('Days since at least {} cases in that country'.format(min_cases))
     ax.set_ylabel('Number of Confirmed Cases')
-    ax.set_title('Cases Per Country')
+    ax.set_title('Cases Per Country from >{} Cases'.format(min_cases))
     ax.legend()
     plt.show()
 
@@ -139,7 +168,7 @@ def get_date_range(date_start,length):
     base = datetime.datetime.strptime(date_start,'%m/%d/%y')
     return [base + datetime.timedelta(days=x) for x in range(length)]
 
-def us_map(states):
+def us_map(states,title = ''):
     fig = plt.figure()
     ax = fig.add_axes([0, 0, 1, 1], projection=ccrs.LambertConformal())
 
@@ -150,7 +179,7 @@ def us_map(states):
 
     ax.background_patch.set_visible(False)
     ax.outline_patch.set_visible(False)
-
+    ax.set_title(title)
     mn = min(states.values())
     mx = max(states.values())
     for state in shpreader.Reader(states_shp).records():
