@@ -23,7 +23,7 @@ def logistic(x,l,k,o):
     return l / (1 + numpy.exp(k*(o-x)))
 
 def expo(x,a,b):
-    return a*pow(b,x)
+    return a*numpy.exp(b*x)
 
 def cmap(value,mn,mx):
     value = numpy.abs(value)
@@ -37,11 +37,11 @@ def start():
     OUTPUT_BASE = '/home/will/Projects/PythonUtilities/covid-sim/out/'
     PATH_TIME_CONFIRMED = os.path.join(PATH_BASE,'time_series_19-covid-Confirmed.csv')
     PATH_TIME_RECOVERY = os.path.join(PATH_BASE,'time_series_19-covid-Recovered.csv')
-    #custom_StatesPer(PATH_TIME_CONFIRMED)
+    custom_StatesPer(PATH_TIME_CONFIRMED)
     custom_UsaRecovery(PATH_TIME_CONFIRMED,PATH_TIME_RECOVERY)
     custom_CountriesZero(PATH_TIME_CONFIRMED)
     custom_StatesPerMap(PATH_TIME_CONFIRMED)
-    custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE)
+    custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE,check_states='Pennsylvania,New Jersey')
 
 def custom_StatesPer(path,highlight='Pennsylvania'):
     '''
@@ -92,7 +92,7 @@ def custom_StatesPerMap(path):
         states[state] = max(y) if len(y) > 0 else 0
     us_map(states,'Percentage of State Population Infected')
 
-def custom_StatesFitMap(path,OUTPUT_BASE, func=expo):
+def custom_StatesFitMap(path,OUTPUT_BASE, func=expo,min_days=3,check_states=''):
     '''
     Fits data to curve, saves the best fit, displays base on map. Redder means high rate.
     '''
@@ -104,13 +104,21 @@ def custom_StatesFitMap(path,OUTPUT_BASE, func=expo):
         for state,_ in list(STATE_POPULATIONS.items()):
             _,y = parse_time(path,province=state)
             y = [i for i in y if i>0]
-            if(len(y)>2): #we need >2 days worth of data
+            if(len(y)>3): #we need >3 days worth of data
                 print(state)
                 x = range(len(y)) #create days
                 try:
-                    #bounds = ([max(y),-numpy.Inf,1],[numpy.Inf,numpy.Inf,365])#for logistic, didn't work
                     params,_ = curve_fit(func, x, y)
                     states[state] = params[1]
+
+                    if(state in check_states.split(',')):
+                        _, ax = plt.subplots()
+                        ax.plot(x,y,c='red',linewidth=2)
+                        ax.plot(x,func(x,*params),c='blue',linewidth=1)
+                        ax.text(0, max(y), '$y={0:.3f}e^{{{1:.3f}x}}$'.format(*params)) 
+                        ax.set_xlabel('Days with Cases')
+                        ax.set_ylabel('Number of Confirmed Cases')
+                        ax.set_title('{} Cases'.format(state))
                     f.write('{},{},{}\n'.format(state,*params))
                 except:
                     raise ValueError('Could not find best fit for {}'.format(state))
