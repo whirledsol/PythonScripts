@@ -37,7 +37,7 @@ def start():
     OUTPUT_BASE = '/home/will/Projects/PythonUtilities/covid-sim/out/'
     PATH_TIME_CONFIRMED = os.path.join(PATH_BASE,'time_series_19-covid-Confirmed.csv')
     PATH_TIME_RECOVERY = os.path.join(PATH_BASE,'time_series_19-covid-Recovered.csv')
-    custom_StatesPer(PATH_TIME_CONFIRMED)
+
     custom_UsaRecovery(PATH_TIME_CONFIRMED,PATH_TIME_RECOVERY)
     custom_CountriesZero(PATH_TIME_CONFIRMED)
     custom_StatesPerMap(PATH_TIME_CONFIRMED)
