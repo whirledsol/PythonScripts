@@ -5,7 +5,7 @@ Created:
 @author: Will Rhodes
 
 """
-import argparse,re,os,csv,datetime,numpy,warnings
+import argparse,re,os,csv,datetime,numpy,warnings,matplotlib
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import cartopy.crs as ccrs
@@ -45,7 +45,7 @@ def start():
     custom_StatesPerMap(PATH_TIME_CONFIRMED)
     custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE,check_states='Pennsylvania,New Jersey,New York')
     custom_CountriesPerZero(PATH_TIME_CONFIRMED)
-    
+    custom_StateExtrapolate(PATH_TIME_CONFIRMED)
     
 
 def custom_UsaRecovery(path,recoverypath):
@@ -132,8 +132,46 @@ def custom_CountriesPerZero(path,func=expo,min_cases=100):
     plt.show()
 
 
-def parse_time(path,country='',province=''):
+def custom_StateExtrapolate(path,func=expo,state='Pennsylvania',duration = 90):
+    '''
+    Extrapolate
+    '''
+    _, ax = plt.subplots()
+    x,y = parse_time(path,province=state)
+    y = [i/STATE_POPULATIONS[state]*100. for i in y if i>0]
+    xd = x[-len(y):]
+    x = range(len(y))
+    ax.plot(xd,y,c='red',linewidth=3)
+
+    params,_ = curve_fit(func, x, y)
+    formula = FORMULAE[func].format(*params)
+    ax.text(0,max(y),formula)
+    print(formula)
+    xd = get_date_range(xd[0],duration)
+    x = range(duration)
+    y = func(x,*params)
     
+    y = [i for i in y if i<=100]
+    x = x[0:len(y)]
+    xd = xd[0:len(y)]
+
+    ax.plot(xd,y,c='blue',dashes=[6, 2],linewidth=1)
+
+    ax.set_xlabel('Date')
+    plt.xticks(rotation=30)
+
+    ax.set_yscale('log')    
+    ax.set_ylabel('% of Population Infected')
+    ax.yaxis.set_major_formatter(matplotlib.ticker.StrMethodFormatter('{x:3}'))
+    
+    ax.set_title('Extrapolation to 100% Infected in {}'.format(state))
+    plt.show()
+
+
+def parse_time(path,country='',province=''):
+    '''
+    parse a time series file from the COVID-19 repo
+    '''
     with open(path, 'r') as f:
         header = f.readline()
         date_start = header.split(',')[4]
@@ -153,9 +191,11 @@ def parse_time(path,country='',province=''):
 
 
 def get_date_range(date_start,length):
-    base = datetime.datetime.strptime(date_start,'%m/%d/%y')
+    '''
+    creates an array of dates
+    '''
+    base = date_start if isinstance(date_start, datetime.date) else datetime.datetime.strptime(date_start,'%m/%d/%y')
     return [base + datetime.timedelta(days=x) for x in range(length)]
-
 
 
 def best_fit(x,y,func,label):
@@ -176,6 +216,8 @@ def graph_fit(x,y,func,title=''):
     '''
     
     params,formula = best_fit(x,y,func,title)
+    if(len(params) == 0): return
+
     _, ax = plt.subplots()
     ax.plot(x,y,c='red',linewidth=2)
     ax.plot(x,func(x,*params),c='blue',linewidth=1)
