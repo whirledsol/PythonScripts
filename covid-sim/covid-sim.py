@@ -13,6 +13,8 @@ import cartopy.io.shapereader as shpreader
 from scipy.optimize import OptimizeWarning
 
 warnings.simplefilter("ignore", OptimizeWarning)
+COUNTRY_POPULATIONS = {"China":1433783686, "US":329064917, "Japan":126860301, "United Kingdom":67530172, "Italy":60550075, "Canada":37411047}
+COUNTRY_COLORS =  {'China':'orange','US':'blue','Japan':'yellow','United Kingdom':'purple', 'Italy':'green', 'Canada':'red'}
 STATE_POPULATIONS = {"California":39512223,"Texas":28995881,"Florida":21477737,"New York":19453561,"Pennsylvania":12801989,"Illinois":12671821,"Ohio":11689100,"Georgia":10617423,"North Carolina":10488084,"Michigan":9986857,"New Jersey":8882190,"Virginia":8535519,"Washington":7614893,"Arizona":7278717,"Massachusetts":6949503,"Tennessee":6833174,"Indiana":6732219,"Missouri":6137428,"Maryland":6045680,"Wisconsin":5822434,"Colorado":5758736,"Minnesota":5639632,"South Carolina":5148714,"Alabama":4903185,"Louisiana":4648794,"Kentucky":4467673,"Oregon":4217737,"Oklahoma":3956971,"Connecticut":3565287,"Utah":3205958,"Puerto Rico":3193694,"Iowa":3155070,"Nevada":3080156,"Arkansas":3017825,"Mississippi":2976149,"Kansas":2913314,"New Mexico":2096829,"Nebraska":1934408,"West Virginia":1792065,"Idaho":1787147,"Hawaii":1415872,"New Hampshire":1359711,"Maine":1344212,"Montana":1068778,"Rhode Island":1059361,"Delaware":973764,"South Dakota":884659,"North Dakota":762062,"Alaska":731545,"District of Columbia":705749,"Vermont":623989,"Wyoming":578759}
 
 def logistic(x,l,k,o):
@@ -22,8 +24,8 @@ def expo(x,a,b):
     return a* numpy.exp(b*x)
 
 FORMULAE = {
-    logistic:'$\frac{{{0:.3f}}}{{1+e^{{{1:.3f}({2:.3f}-x)}}}}$',
-    expo:'${0:.3f}e^{{{1:.3f}x}}$'
+    logistic:'$y=\frac{{{0:.3f}}}{{1+e^{{{1:.3f}({2:.3f}-x)}}}}$',
+    expo:'$y={0:.3f}e^{{{1:.3f}x}}$'
 }
 
 def cmap(value,mn,mx):
@@ -39,25 +41,12 @@ def start():
     PATH_TIME_CONFIRMED = os.path.join(PATH_BASE,'time_series_19-covid-Confirmed.csv')
     PATH_TIME_RECOVERY = os.path.join(PATH_BASE,'time_series_19-covid-Recovered.csv')
 
-    custom_UsaRecovery(PATH_TIME_CONFIRMED,PATH_TIME_RECOVERY)
+    #custom_UsaRecovery(PATH_TIME_CONFIRMED,PATH_TIME_RECOVERY)
     custom_StatesPerMap(PATH_TIME_CONFIRMED)
-    custom_CountriesZero(PATH_TIME_CONFIRMED)
     custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE,check_states='Pennsylvania,New Jersey,New York')
-
-def custom_StatesPer(path,highlight='Pennsylvania'):
-    '''
-    Shows percent of state vs percent of US over time
-    '''
-    _, ax = plt.subplots()
-
-    for state,population in STATE_POPULATIONS.items():
-        x,y = parse_time(path,province=state)
-        y = [i/population for i in y]
-        linewidth = 3 if highlight == state else 1
-        ax.plot(x,y,label=state,c=numpy.random.rand(3,),linewidth=linewidth)
-    #ax.legend()
-    plt.show()
-
+    custom_CountriesPerZero(PATH_TIME_CONFIRMED)
+    
+    
 
 def custom_UsaRecovery(path,recoverypath):
     '''
@@ -93,6 +82,7 @@ def custom_StatesPerMap(path):
         states[state] = max(y) if len(y) > 0 else 0
     us_map(states,'Percentage of State Population Infected')
 
+
 def custom_StatesFitMap(path,OUTPUT_BASE, func=expo,min_days=3,check_states=''):
     '''
     Fits data to curve, saves the best fit, displays base on map. Redder means high rate.
@@ -121,29 +111,23 @@ def custom_StatesFitMap(path,OUTPUT_BASE, func=expo,min_days=3,check_states=''):
     us_map(states,'Case Growth, b in $ae^{{bx}}$')
 
 
-
-def custom_CountriesZero(path,func=expo,min_cases=100):
+def custom_CountriesPerZero(path,func=expo,min_cases=100):
     '''
     Shows cases over time starting the day at least min_cases were hit for each country
     '''
     _, ax = plt.subplots()
-    countries = ['China','Italy','US','France']
-    colors = ['red','green','blue','brown','yellow']
     
-    ys = []
-    for country in countries:
+    for country,population in COUNTRY_POPULATIONS.items():
         _,y = parse_time(path,country=country)
-        y = [i for i in y if i>min_cases]
-        ys.append(y)
-        
-    for i,y in enumerate(ys):
+        y = [i/population*100. for i in y if i>min_cases]
         x = range(len(y))
-        graph_fit(x,y,func,'{} Case Growth'.format(countries[i]))
-        ax.plot(x, y, c=colors[i],label=countries[i])
+        _,formula = best_fit(x,y,func,country)
+        label = '{}  {}'.format(country,formula)
+        ax.plot(x, y, c=COUNTRY_COLORS[country],label=label)
 
     ax.set_xlabel('Days since at least {} cases in that country'.format(min_cases))
-    ax.set_ylabel('Number of Confirmed Cases')
-    ax.set_title('Cases Per Country from >{} Cases'.format(min_cases))
+    ax.set_ylabel('% Population Infected')
+    ax.set_title('Percent of Country Infected After {} Cases'.format(min_cases))
     ax.legend()
     plt.show()
 
@@ -173,16 +157,25 @@ def get_date_range(date_start,length):
     return [base + datetime.timedelta(days=x) for x in range(length)]
 
 
+
+def best_fit(x,y,func,label):
+    '''
+    attempt to find the best fit params and formula
+    '''
+    try:
+        params,_ = curve_fit(func, x, y)
+        formula = FORMULAE[func].format(*params)
+        return params,formula
+    except:
+        print('Could not find a curve for {}'.format(label))
+        return [],''
+
 def graph_fit(x,y,func,title=''):
     '''
     Show the data and best fit curve (using func) and formula too!
     '''
-    try:
-        params,_ = curve_fit(func, x, y)
-    except:
-        print('Could not find a curve for {}'.format(title))
-        return
-
+    
+    params,formula = best_fit(x,y,func,title)
     _, ax = plt.subplots()
     ax.plot(x,y,c='red',linewidth=2)
     ax.plot(x,func(x,*params),c='blue',linewidth=1)
