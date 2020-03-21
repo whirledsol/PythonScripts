@@ -5,15 +5,11 @@ Created:
 @author: Will Rhodes
 
 """
-import argparse
-import re,os,csv
-import datetime
-import numpy
+import argparse,re,os,csv,datetime,numpy,warnings
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import cartopy.crs as ccrs
 import cartopy.io.shapereader as shpreader
-import warnings
 from scipy.optimize import OptimizeWarning
 
 warnings.simplefilter("ignore", OptimizeWarning)
@@ -23,7 +19,12 @@ def logistic(x,l,k,o):
     return l / (1 + numpy.exp(k*(o-x)))
 
 def expo(x,a,b):
-    return a*numpy.exp(b*x)
+    return a* numpy.exp(b*x)
+
+FORMULAE = {
+    logistic:'$\frac{{{0:.3f}}}{{1+e^{{{1:.3f}({2:.3f}-x)}}}}$',
+    expo:'${0:.3f}e^{{{1:.3f}x}}$'
+}
 
 def cmap(value,mn,mx):
     value = numpy.abs(value)
@@ -39,9 +40,9 @@ def start():
     PATH_TIME_RECOVERY = os.path.join(PATH_BASE,'time_series_19-covid-Recovered.csv')
 
     custom_UsaRecovery(PATH_TIME_CONFIRMED,PATH_TIME_RECOVERY)
-    custom_CountriesZero(PATH_TIME_CONFIRMED)
     custom_StatesPerMap(PATH_TIME_CONFIRMED)
-    custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE,check_states='Pennsylvania,New Jersey')
+    custom_CountriesZero(PATH_TIME_CONFIRMED)
+    custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE,check_states='Pennsylvania,New Jersey,New York')
 
 def custom_StatesPer(path,highlight='Pennsylvania'):
     '''
@@ -112,27 +113,21 @@ def custom_StatesFitMap(path,OUTPUT_BASE, func=expo,min_days=3,check_states=''):
                     states[state] = params[1]
 
                     if(state in check_states.split(',')):
-                        _, ax = plt.subplots()
-                        ax.plot(x,y,c='red',linewidth=2)
-                        ax.plot(x,func(x,*params),c='blue',linewidth=1)
-                        ax.text(0, max(y), '$y={0:.3f}e^{{{1:.3f}x}}$'.format(*params)) 
-                        ax.set_xlabel('Days with Cases')
-                        ax.set_ylabel('Number of Confirmed Cases')
-                        ax.set_title('{} Cases'.format(state))
+                        graph_fit(x,y,func,'{} Case Growth'.format(state))
                     f.write('{},{},{}\n'.format(state,*params))
                 except:
                     raise ValueError('Could not find best fit for {}'.format(state))
 
-    us_map(states,'Case Growth (Expotential Base)')
+    us_map(states,'Case Growth, b in $ae^{{bx}}$')
 
 
 
-def custom_CountriesZero(path,min_cases=100):
+def custom_CountriesZero(path,func=expo,min_cases=100):
     '''
     Shows cases over time starting the day at least min_cases were hit for each country
     '''
     _, ax = plt.subplots()
-    countries = ['China','Italy','US','Iran','Spain']
+    countries = ['China','Italy','US','France']
     colors = ['red','green','blue','brown','yellow']
     
     ys = []
@@ -140,9 +135,10 @@ def custom_CountriesZero(path,min_cases=100):
         _,y = parse_time(path,country=country)
         y = [i for i in y if i>min_cases]
         ys.append(y)
-    
+        
     for i,y in enumerate(ys):
         x = range(len(y))
+        graph_fit(x,y,func,'{} Case Growth'.format(countries[i]))
         ax.plot(x, y, c=colors[i],label=countries[i])
 
     ax.set_xlabel('Days since at least {} cases in that country'.format(min_cases))
@@ -176,7 +172,32 @@ def get_date_range(date_start,length):
     base = datetime.datetime.strptime(date_start,'%m/%d/%y')
     return [base + datetime.timedelta(days=x) for x in range(length)]
 
+
+def graph_fit(x,y,func,title=''):
+    '''
+    Show the data and best fit curve (using func) and formula too!
+    '''
+    try:
+        params,_ = curve_fit(func, x, y)
+    except:
+        print('Could not find a curve for {}'.format(title))
+        return
+
+    _, ax = plt.subplots()
+    ax.plot(x,y,c='red',linewidth=2)
+    ax.plot(x,func(x,*params),c='blue',linewidth=1)
+    formula = FORMULAE[func].format(*params)
+    ax.text(0, max(y), formula) 
+
+    ax.set_xlabel('Days with Cases')
+    ax.set_ylabel('Number of Confirmed Cases')
+    ax.set_title(title)
+    plt.show()
+
 def us_map(states,title = ''):
+    '''
+    show a us map with state color highlighting
+    '''
     fig = plt.figure()
     ax = fig.add_axes([0, 0, 1, 1], projection=ccrs.LambertConformal())
 
