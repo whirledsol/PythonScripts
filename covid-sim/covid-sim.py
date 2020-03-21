@@ -78,9 +78,9 @@ def custom_StatesPerMap(path):
     states = {}
     for state,population in STATE_POPULATIONS.items():
         _,y = parse_time(path,province=state)
-        y = [i/population for i in y if i>0]
+        y = [i/population*100. for i in y if i>0]
         states[state] = max(y) if len(y) > 0 else 0
-    us_map(states,'Percentage of State Population Infected')
+    us_map(states,'Percentage of State Population Infected',formatter='{0:.3f}%')
 
 
 def custom_StatesFitMap(path,OUTPUT_BASE, func=expo,min_days=3,check_states=''):
@@ -96,7 +96,7 @@ def custom_StatesFitMap(path,OUTPUT_BASE, func=expo,min_days=3,check_states=''):
             _,y = parse_time(path,province=state)
             y = [i for i in y if i>0]
             if(len(y)>3): #we need >3 days worth of data
-                print(state)
+                #print(state)
                 x = range(len(y)) #create days
                 try:
                     params,_ = curve_fit(func, x, y)
@@ -187,7 +187,7 @@ def graph_fit(x,y,func,title=''):
     ax.set_title(title)
     plt.show()
 
-def us_map(states,title = ''):
+def us_map(states,title = '',text_top=5,formatter = '{0:.3f}'):
     '''
     show a us map with state color highlighting
     '''
@@ -204,6 +204,13 @@ def us_map(states,title = ''):
     ax.set_title(title)
     mn = min(states.values())
     mx = max(states.values())
+
+    #find the min value that we will display text values for
+    text_top = min(text_top,len(states.values()))
+    text_threshold = list(states.values())
+    text_threshold.sort()
+    text_threshold = min(text_threshold[-text_top:])
+
     for state in shpreader.Reader(states_shp).records():
 
         edgecolor = 'black'
@@ -216,10 +223,16 @@ def us_map(states,title = ''):
         facecolor = cmap(value,mn,mx)
             
 
-        # `astate.geometry` is the polygon to plot
+        # `state.geometry` is the polygon to plot
         ax.add_geometries([state.geometry], ccrs.PlateCarree(),
                         facecolor=facecolor, edgecolor=edgecolor)
 
+        #add text if value is over threshold
+        if value >= text_threshold:
+            x = state.geometry.centroid.x        
+            y = state.geometry.centroid.y
+            ax.text(x, y, formatter.format(value),size=7, color='blue', ha='center', va='center', transform=ccrs.PlateCarree())   
+            
     plt.show()
 
 if  __name__ =='__main__':start()
