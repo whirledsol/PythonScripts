@@ -41,11 +41,15 @@ def start():
     PATH_TIME_CONFIRMED = os.path.join(PATH_BASE,'time_series_19-covid-Confirmed.csv')
     PATH_TIME_RECOVERY = os.path.join(PATH_BASE,'time_series_19-covid-Recovered.csv')
 
+    important_states = ['New York','New Jersey','Pennsylvania']
+
     #custom_UsaRecovery(PATH_TIME_CONFIRMED,PATH_TIME_RECOVERY)
+    custom_StatesNew(PATH_TIME_CONFIRMED,important_states)
     custom_StatesPerMap(PATH_TIME_CONFIRMED)
-    custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE,check_states='Pennsylvania,New Jersey,New York')
+    custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE, important_states)
     custom_CountriesPerZero(PATH_TIME_CONFIRMED)
-    custom_StateExtrapolate(PATH_TIME_CONFIRMED)
+    
+    custom_StatesExtrapolate(PATH_TIME_CONFIRMED)
     
 
 def custom_UsaRecovery(path,recoverypath):
@@ -71,6 +75,23 @@ def custom_UsaRecovery(path,recoverypath):
     ax.set_yscale('log')
     plt.show()
 
+def custom_StatesNew(path,check_states=[],min_cases=0):
+    '''
+    Shows the increase in cases since previous day for various states over time
+    '''
+    _, ax = plt.subplots()
+    for state in check_states:
+        _,y = parse_time(path,province=state)
+        y = [v-y[i-1] for i, v in enumerate(y) if v>min_cases and i>min_cases]
+        x = range(len(y))
+        ax.plot(x,y,c=numpy.random.rand(3,),label=state)
+    
+    ax.set_xlabel('Days since at least {} cases in that state'.format(min_cases))
+    ax.set_ylabel('New Cases since Previous Day')
+    ax.set_title('New Cases Per Day for Various States'.format(min_cases))
+    ax.legend()
+    plt.show()       
+
 def custom_StatesPerMap(path):
     '''
     Shows percent of state affected on map. Redder is bad.
@@ -82,8 +103,7 @@ def custom_StatesPerMap(path):
         states[state] = max(y) if len(y) > 0 else 0
     us_map(states,'Percentage of State Population Infected',formatter='{0:.3f}%')
 
-
-def custom_StatesFitMap(path,OUTPUT_BASE, func=expo,min_days=3,check_states=''):
+def custom_StatesFitMap(path,OUTPUT_BASE,check_states=[],func=expo,min_days=3):
     '''
     Fits data to curve, saves the best fit, displays base on map. Redder means high rate.
     '''
@@ -102,7 +122,7 @@ def custom_StatesFitMap(path,OUTPUT_BASE, func=expo,min_days=3,check_states=''):
                     params,_ = curve_fit(func, x, y)
                     states[state] = params[1]
 
-                    if(state in check_states.split(',')):
+                    if(state in check_states):
                         graph_fit(x,y,func,'{} Case Growth'.format(state))
                     f.write('{},{},{}\n'.format(state,*params))
                 except:
@@ -132,9 +152,9 @@ def custom_CountriesPerZero(path,func=expo,min_cases=100):
     plt.show()
 
 
-def custom_StateExtrapolate(path,func=expo,state='Pennsylvania',duration = 90):
+def custom_StatesExtrapolate(path,func=expo,state='Pennsylvania',duration = 90):
     '''
-    Extrapolate
+    Extrapolates out until 100%
     '''
     _, ax = plt.subplots()
     x,y = parse_time(path,province=state)
@@ -168,6 +188,20 @@ def custom_StateExtrapolate(path,func=expo,state='Pennsylvania',duration = 90):
     plt.show()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def parse_time(path,country='',province=''):
     '''
     parse a time series file from the COVID-19 repo
@@ -186,7 +220,11 @@ def parse_time(path,country='',province=''):
             location = province if province != '' else country
             if(row[index_match] == location):
                 new = row[4:]
-                y = [int(a) + int(b) for a,b in zip(y, new)]
+                try:
+                    y = [int(a or '0') + int(b or '0') for a,b in zip(y, new)]
+                except:
+                    print(new)
+                    raise ValueError('Could not parse values')
         return x,y
 
 
