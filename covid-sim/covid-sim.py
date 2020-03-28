@@ -39,16 +39,14 @@ def start():
     PATH_BASE = '/home/will/Projects/COVID-19/csse_covid_19_data/csse_covid_19_time_series'
     OUTPUT_BASE = '/home/will/Projects/PythonUtilities/covid-sim/out/'
     PATH_TIME_CONFIRMED = os.path.join(PATH_BASE,'time_series_19-covid-Confirmed.csv')
-    PATH_TIME_RECOVERY = os.path.join(PATH_BASE,'time_series_19-covid-Recovered.csv')
 
     important_states = ['New York','New Jersey','Pennsylvania']
 
-    #custom_UsaRecovery(PATH_TIME_CONFIRMED,PATH_TIME_RECOVERY)
+    #custom_StatesDeaths(PATH_TIME_CONFIRMED,PATH_TIME_DEATHS)
     custom_StatesNew(PATH_TIME_CONFIRMED,important_states)
     custom_StatesPerMap(PATH_TIME_CONFIRMED)
     custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE, important_states)
     custom_CountriesPerZero(PATH_TIME_CONFIRMED)
-    
     custom_StatesExtrapolate(PATH_TIME_CONFIRMED)
     
 
@@ -207,19 +205,21 @@ def parse_time(path,country='',province=''):
     parse a time series file from the COVID-19 repo
     '''
     with open(path, 'r') as f:
+        index_first_date = 2
         header = f.readline()
-        date_start = header.split(',')[4]
-        days = len(header.split(','))-4
+        date_start = header.split(',')[index_first_date]
+        days = len(header.split(','))-index_first_date
         #print('parsing {} days worth of data'.format(days))
 
         x = get_date_range(date_start,len(header.split(','))-4)
         y = list(numpy.zeros(days))
-        for line in f:
-            row = line.replace('\n','').split(',')
+
+        reader = csv.reader(f, delimiter=",")
+        for _, row in enumerate(reader):
             index_match = 0 if province != '' else 1
             location = province if province != '' else country
             if(row[index_match] == location):
-                new = row[4:]
+                new = row[index_first_date:]
                 try:
                     y = [int(a or '0') + int(b or '0') for a,b in zip(y, new)]
                 except:
@@ -232,7 +232,7 @@ def get_date_range(date_start,length):
     '''
     creates an array of dates
     '''
-    base = date_start if isinstance(date_start, datetime.date) else datetime.datetime.strptime(date_start,'%m/%d/%y')
+    base = date_start if isinstance(date_start, datetime.date) else datetime.datetime.strptime(date_start,'%m/%d/%Y')
     return [base + datetime.timedelta(days=x) for x in range(length)]
 
 
