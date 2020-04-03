@@ -11,6 +11,7 @@ from scipy.optimize import curve_fit
 import cartopy.crs as ccrs
 import cartopy.io.shapereader as shpreader
 from scipy.optimize import OptimizeWarning,fsolve
+import matplotlib.dates as mdates
 
 warnings.simplefilter("ignore", OptimizeWarning)
 COUNTRY_POPULATIONS = {"China":1433783686, "US":329064917, "Japan":126860301, "United Kingdom":67530172, "Italy":60550075, "Canada":37411047}
@@ -22,25 +23,28 @@ logistic = lambda x,l,k,o: l / (1 + numpy.exp(k*(o-x)))
 expo = lambda x,a,b: a* numpy.exp(b*x)
 
 FORMULAE = {
-    logistic:'$y=\frac{{{0:.3f}}}{{1+e^{{{1:.3f}({2:.3f}-x)}}}}$',
+    logistic:'$y=\\frac{{{0:.3f}}}{{1+e^{{{1:.3f}({2:.3f}-x)}}}}$',
     expo:'$y={0:.3f}e^{{{1:.3f}x}}$'
 }
+
+plot_months = mdates.MonthLocator()   # every year
+plot_days = mdates.DayLocator()  
 
 def start():
     PATH_BASE = '/home/will/Projects/COVID-19/csse_covid_19_data/csse_covid_19_time_series'
     OUTPUT_BASE = '/home/will/Projects/PythonUtilities/covid-sim/out/'
     PATH_TIME_CONFIRMED = os.path.join(PATH_BASE,'time_series_19-covid-Confirmed.csv')
 
-    duration = 120
+    duration = 90
     important_states = ['New York','New Jersey','Pennsylvania']
     func = logistic
     bounds=([0.03,-1,5], [0.90,1,duration])
 
-    custom_StatesNew(PATH_TIME_CONFIRMED,important_states)
-    custom_StatesPerMap(PATH_TIME_CONFIRMED)
-    custom_CountriesPerZero(PATH_TIME_CONFIRMED)
+    #custom_StatesNew(PATH_TIME_CONFIRMED,important_states)
+    #custom_StatesPerMap(PATH_TIME_CONFIRMED)
+    #custom_CountriesPerZero(PATH_TIME_CONFIRMED)
 
-    custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE, important_states,func,bounds)
+    #custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE, important_states,expo)
 
     custom_StatesExtrapolate(PATH_TIME_CONFIRMED,important_states,duration,func,bounds)
     
@@ -134,7 +138,7 @@ def custom_CountriesPerZero(path,func=expo,min_cases=100):
         _,y = parse_time(path,country=country)
         y = [i/population*100. for i in y if i>min_cases]
         x = range(len(y))
-        _,formula = best_fit(x,y,func,country)
+        _,formula = best_fit(x,y,func,label=country)
         label = '{}  {}'.format(country,formula)
         ax.plot(x, y, c=COUNTRY_COLORS[country],label=label)
 
@@ -149,19 +153,16 @@ def custom_StatesExtrapolate(path,important_states,duration = 90,func=logistic, 
     '''
     Extrapolates the current data to fit func
     '''
-    fig = plt.figure(figsize=(8, 6))
+    _, ax = plt.subplots()
     for i,state in enumerate(important_states):
-        ax = fig.add_subplot(220+(i+1))
         x,y = parse_time(path,province=state)
         y = [i/STATE_POPULATIONS[state]*100. for i in y if i>0]
         xd = x[-len(y):]
         x = range(len(y))
-        ax.plot(xd,y,c='red',linewidth=3)
+        ax.plot(xd,y,c=numpy.random.rand(3,),label=state,linewidth=3)
 
-        params,_ = curve_fit(func, x, y,bounds=bounds)
-        formula = FORMULAE[func].format(*params)
-        ax.text(0,max(y),formula)
-
+        params,formula = best_fit(x,y,func,bounds,state)
+        
         xd = get_date_range(xd[0],duration)
         x = range(duration)
         y = func(x,*params)
@@ -170,15 +171,19 @@ def custom_StatesExtrapolate(path,important_states,duration = 90,func=logistic, 
         x = x[0:len(y)]
         xd = xd[0:len(y)]
 
-        ax.plot(xd,y,c='blue',dashes=[6, 2],linewidth=1)
+        ax.plot(xd,y,c=numpy.random.rand(3,),label=formula,dashes=[6, 2],linewidth=1)
 
+        ax.legend()
+        
         ax.set_xlabel('Date')
         plt.xticks(rotation=30)
-
+        ax.xaxis.set_major_locator(plot_months)
+        ax.xaxis.set_minor_locator(plot_days)
+        
         ax.set_ylabel('% of Population Infected')
         ax.yaxis.set_major_formatter(matplotlib.ticker.StrMethodFormatter('{x:.3f}'))
         
-        ax.set_title('Extrapolation of Data in {}'.format(state))
+        ax.set_title('Extrapolation of Cases in Various States')
     plt.show()
 
 
@@ -232,12 +237,12 @@ def get_date_range(date_start,length):
     return [base + datetime.timedelta(days=x) for x in range(length)]
 
 
-def best_fit(x,y,func,label):
+def best_fit(x,y,func=expo,bounds=None,label='dat data'):
     '''
     attempt to find the best fit params and formula
     '''
     try:
-        params,_ = curve_fit(func, x, y)
+        params,_ = curve_fit(func, x, y, maxfev=5000, bounds = bounds)
         formula = FORMULAE[func].format(*params)
         return params,formula
     except:
@@ -249,7 +254,7 @@ def graph_fit(x,y,func,title=''):
     Show the data and best fit curve (using func) and formula too!
     '''
     
-    params,formula = best_fit(x,y,func,title)
+    params,formula = best_fit(x,y,func,label=title)
     if(len(params) == 0): return
 
     _, ax = plt.subplots()
