@@ -40,11 +40,11 @@ def start():
     func = logistic
     bounds=([0.03,-1,5], [0.90,1,duration])
 
-    #custom_StatesNew(PATH_TIME_CONFIRMED,important_states)
-    #custom_StatesPerMap(PATH_TIME_CONFIRMED)
-    #custom_CountriesPerZero(PATH_TIME_CONFIRMED)
+    custom_StatesNew(PATH_TIME_CONFIRMED,important_states)
+    custom_StatesPerMap(PATH_TIME_CONFIRMED)
+    custom_CountriesPerZero(PATH_TIME_CONFIRMED)
 
-    #custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE, important_states,expo)
+    custom_StatesFitMap(PATH_TIME_CONFIRMED,OUTPUT_BASE, important_states,expo)
 
     custom_StatesExtrapolate(PATH_TIME_CONFIRMED,important_states,duration,func,bounds)
     
