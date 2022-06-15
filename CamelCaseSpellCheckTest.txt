@@ -1,0 +1,17 @@
+CamelCase
+TestFile
+testFile
+TESTFile
+ABCCompany
+AdAstra
+TestA
+TestB
+
+CammelCase
+TwestFyle
+bummpyCase
+
+Test1Variable
+Test2Variable
+counter1
+counter2
