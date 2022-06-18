@@ -60,7 +60,7 @@ def main():
 
 	#add bootstrap
 	soup = add_bootstrap(soup)
-
+	soup = add_navigation(soup)
 	#write
 	write_html(soup.prettify(),PATH_OUT_HTML)
 
@@ -72,6 +72,7 @@ def get_content_id(cur,titleLike):
 	'''
 	content = cur.execute("select ContentID from content WHERE Title=:titleLike",{"titleLike":titleLike}).fetchone()
 	return content[0]
+
 
 def get_content_bookmarks(cur,ContentID):
 	'''
@@ -109,7 +110,7 @@ def add_bootstrap(soup):
 	bootstrap = '''
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
-	<style>body{margin:0 10%;}</style>
+	<style>body{width:900px; margin:5rem auto;}</style>
 	'''
 	bootstrap = BeautifulSoup(bootstrap, 'html.parser')
 	
@@ -126,71 +127,123 @@ def add_bootstrap(soup):
 	return soup
 
 
+def add_navigation(soup):
+	'''
+	adds navigation pane
+	'''
+	navigation = '''
+	<div class="bg-light fixed-top w-100 p-2 text-end">
+	<span id="annotation-current"></span>
+	<button type="button" id="btn-prev" class="btn btn-sm btn-outline-dark">Previous</button>
+	<button type="button" id="btn-next" class="btn btn-sm  btn-outline-primary">Next</button>
+	</div>
+	<script>
+		var annotationIndex = 0;
+		const annotations = Array.from(document.querySelectorAll('.kne-annotation'));
+		console.log('annotations',annotations);
+
+		const navigate = (delta) =>{
+			annotationIndex = annotationIndex+delta;
+			annotationIndex = annotationIndex < 0 ? annotations.length-1 : annotationIndex;
+			annotationIndex = annotationIndex >= annotations.length ? 0 : annotationIndex;
+			
+			const el = annotations[annotationIndex];
+			console.log('annotationIndex',annotationIndex,el);
+
+			document.getElementById('annotation-current').innerText = el.dataset.title; //bs is hiding title
+			
+			const y = el.getBoundingClientRect().top + window.scrollY - 50;
+			window.scroll({
+				top: y,
+				behavior: 'smooth'
+			});
+		};
+		document.getElementById('btn-prev').onclick = _=>{
+			navigate(-1)
+		};
+
+		document.getElementById('btn-next').onclick = _=>{
+			navigate(1)
+		};
+	</script>
+	'''
+	navigation = BeautifulSoup(navigation, 'html.parser')
+	soup.find_all('body')[-1].append(navigation)
+	return soup
+
+
 def insert_bookmark(soup,bookmark):
 	'''
 	insert bookmark
 	'''
-	#print(bookmark.Text)
-	coordinatesStart = get_point_coordinates(bookmark.StartContainerPath)
-	coordinatesEnd = get_point_coordinates(bookmark.EndContainerPath)
-	tag = get_bookmark_tag(soup,bookmark)
-	if(coordinatesStart[1] == coordinatesEnd[1]):
-		soup = inject_tag(soup,coordinatesStart,coordinatesEnd,tag)
-	else:
-		soup = wrap_tag(soup,coordinatesStart,coordinatesEnd,tag)
-	
-	print('\n\n')
+	#print(bookmark.BookmarkID)
+	try:
+		coordinatesStart = get_point_coordinates(bookmark.StartContainerPath)
+		coordinatesEnd = get_point_coordinates(bookmark.EndContainerPath)
+		
+		if(coordinatesStart is None or coordinatesEnd is None):
+			return soup
+
+		popover = get_bookmark_tag(soup,bookmark)
+		if(coordinatesStart[1] == coordinatesEnd[1]):
+			soup = inject_popover(soup,coordinatesStart,coordinatesEnd,popover)
+		else:
+			soup = wrap_popover(soup,coordinatesStart,coordinatesEnd,popover)
+	except Exception as e:
+		print(e)
+		print(bookmark.Text)
 	return soup
 
-def locate_tag(soup,documentIndex,index):
+
+def locate_content(soup,documentIndex,index):
 	'''
 	locates the tag
 	'''
 	document = soup.find_all('body')[documentIndex]
 	
 	documentElements = list(document.children)
-	tag = documentElements[index]
+	content = documentElements[index]
 	
-	if(not isinstance(tag,Tag)):
-		print('not instance')
-		#tag = tag.parent
+	if(not isinstance(content,Tag) and len(content.strip())):
+		#we are in a liminal space, take head, move back one
+		content = content.previous_sibling
 
-	if tag.string is None:
-		tag.string = ""
-	return tag
+	if content.string is None:
+		content.string = ""
+	return content
 
-def wrap_tag(soup,coordinatesStart,coordinatesEnd,tag):
+
+def wrap_popover(soup,coordinatesStart,coordinatesEnd,popover):
 	'''
 	wraps multiple elements
 	'''
+	#print('\twrap')
 	documentIndex, indexStart, charStart = coordinatesStart
 	_,indexEnd,charEnd = coordinatesEnd
-	for i in range(indexStart-1,indexEnd):
-		line = locate_tag(soup,documentIndex,i)
-		tag['class'] = 'd-block bg-warning'
-		line.wrap(tag)
+	for i in range(0,indexEnd-indexStart+1):
+		content = locate_content(soup,documentIndex,indexEnd-i)
+		popover['class'] += ' d-block'
+		content.wrap(popover)
 	return soup
 
-def inject_tag(soup,coordinatesStart,coordinatesEnd,tag):
+
+def inject_popover(soup,coordinatesStart,coordinatesEnd,popover):
 	'''
 	wraps text within element
 	'''
 	documentIndex, index, charStart = coordinatesStart
 	_,_,charEnd = coordinatesEnd
-	
-	line = locate_tag(soup,documentIndex,index)
+	#print('\tinject')
+	content = locate_content(soup,documentIndex,index)
+	start = content.string[:charStart] or ""
+	middle = content.string[charStart:charEnd] or ""
+	end = content.string[charEnd:] or ""
 
-	print(type(line))
+	popover.string = middle
 
-	start = line.string[:charStart] or ""
-	middle = line.string[charStart:charEnd] or ""
-	end = line.string[charEnd:] or ""
-
-	tag.string = middle
-
-	line.string = start
-	line.append(tag)
-	line.append(end)
+	content.string = start
+	content.append(popover)
+	content.append(end)
 	return soup
 
 
@@ -200,7 +253,7 @@ def get_point_coordinates(containerPath):
 	'''
 	pattern = r"^(.+)#.*\((.*)\)$"
 	matches = re.search(pattern,containerPath)
-	#nodes = [int(x) for x in matches.group(2).split('/')]
+
 	document = matches.group(1)
 	components = matches.group(2).split('/')
 	index = components[-2]
@@ -222,11 +275,14 @@ def get_point_coordinates(containerPath):
 
 
 def get_bookmark_tag(soup, bookmark):
-	annotation = bookmark.Text.replace("\"","\\\'")
+	annotation = '<div class=\"text-small mb-3\">\"'+ bookmark.Text.replace("\"","\\\'") + '\"</div><div class=\"fw-bold\">'+  (bookmark.Annotation or '(No comment given.)').replace("\"","\\\'")+'</div>'
 	tag = soup.new_tag('a')
-	tag["class"] ="bg-warning"
+	tag["href"] = "javascript:void(0)"
+	tag["class"] = "kne-annotation bg-warning"
 	tag["data-bs-toggle"] ="popover"
 	tag["title"] = bookmark.BookmarkID
+	tag["data-title"] = bookmark.BookmarkID
+	tag["data-bs-html"] = "true"
 	tag["data-bs-content"] = annotation
 	return tag
 
