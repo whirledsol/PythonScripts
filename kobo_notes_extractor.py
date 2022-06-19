@@ -101,6 +101,7 @@ def epub_to_soup(path,removeCover=False):
 	'''	
 	html = epub_to_html(path)
 	soup = BeautifulSoup(html, 'html.parser')
+	[x.extract() for x in soup.find_all('a')]
 	if removeCover:
 		soup.find('html').extract()
 	return soup
@@ -217,8 +218,9 @@ def locate_content(soup,documentIndex,index):
 
 	if(len(str(content).strip()) == 0):
 		#we are in a liminal space, take heed, move back one
-		content = content.previous_sibling
-		print('No content. Using previous sibling.')
+		#content = content.next_sibling
+		raise "fix this"
+		print('No content. Using next sibling.')
 		pass
 
 	if content.string is None:
