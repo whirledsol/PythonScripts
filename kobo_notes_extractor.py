@@ -66,7 +66,7 @@ def main():
 	#add bootstrap
 	soup = add_bootstrap(soup)
 	soup = add_navigation(soup)
-	#soup = add_sidebar(soup) #does not cooperate with popover
+	soup = add_sidebar(soup) #does not cooperate with popover
 
 	#write
 	write_html(soup.prettify(),PATH_OUT_HTML)
@@ -164,7 +164,7 @@ def add_navigation(soup):
 			annotationIndex = annotationIndex >= annotations.length ? 0 : annotationIndex;
 			
 			const el = annotations[annotationIndex];
-			console.log('annotationIndex',annotationIndex,el);
+			//console.log('annotationIndex',annotationIndex,el);
 
 			document.getElementById('annotation-current').innerText = el.dataset.title; //bs is hiding title
 			
@@ -188,21 +188,23 @@ def add_navigation(soup):
 	soup.find_all('body')[-1].append(navigation)
 	return soup
 
+
 def add_sidebar(soup):
 	'''
-	adds navigation pane
+	adds sidebar pointing to comments
 	'''
 	script = '''
+	<div id="sidebar"></div>
 	<script>
 		if(annotations){
 			let sideItems = '';
 			annotations.map((el,i)=>{
 				const y = el.getBoundingClientRect().top;
 				const title = el.dataset.title;
-				console.log(title,y);
 				sideItems += '<div class="position-absolute" style="top:'+y+'px;left:0;color:#999">'+title+'</div>';
 			});
-			document.body.innerHTML += sideItems
+			let parent = document.getElementById('sidebar');
+			parent.innerHTML += sideItems
 		}
 	</script>
 	'''
@@ -234,19 +236,6 @@ def insert_bookmark(soup,bookmark):
 		
 	return soup
 
-def get_element_content(element):
-	'''
-	could be tag or navigablestring
-	'''
-	return (element.string or '') if isinstance(element,Tag) else str(element)
-
-
-def is_element_empty(element):
-	'''
-	returns bool if empty
-	'''
-	return len(get_element_content(element).strip(' \t\n\r')) == 0
-
 
 def locate_element(soup,documentIndex,index):
 	'''
@@ -266,6 +255,7 @@ def inject_popover(soup,coordinatesStart,coordinatesEnd,popover):
 	'''
 	title = popover['title']
 
+	#get coordinates
 	documentIndex, indexStart, charStart = coordinatesStart
 	_,indexEnd,charEnd = coordinatesEnd
 
@@ -274,8 +264,7 @@ def inject_popover(soup,coordinatesStart,coordinatesEnd,popover):
 
 	element = locate_element(soup,documentIndex,index)
 	
-	
-
+	#if the instance is just a block of letters (can occur), wrap the whole thing
 	if(isinstance(element,NavigableString)):
 		print(title,'wrap')
 		popover['class'] += ' d-inline-block'
@@ -286,32 +275,34 @@ def inject_popover(soup,coordinatesStart,coordinatesEnd,popover):
 	#based on the flat hierarchy by default, there will either be one element and this works
 	#OR (since we are going in reverse order) multiple elements, and we'll take the first one - undoubetedly a navigablestring
 	content = element.contents[0]
-	if(len(element.contents) > 1 and isinstance(content,Tag) and content.name == 'a' and content.string is None):
-		#this is a page tag, ignore
+
+	if(len(element.contents) > 1 and content.name == 'a' and content.string is None):
+		#BUSINESS LOGIC: this is a page tag, ignore
 		content = element.contents[1]
+	
+	#get the string of the tag
 	content = str(content)
 
 	#which char range?
-	charStart = 0 if charStart > charEnd else charStart
-	charEnd = len(content)-1 if charEnd == 0 else charEnd
+	if charStart == charEnd:
+		charStart += -1
+		charEnd += 1
+	charStart = 0 if charStart > charEnd or charStart < 0 else charStart
+	charEnd = len(content)-1 if charEnd == 0 or charEnd >= len(content) else charEnd
 
-	if title == '772d7a31-de6f-4532-81e1-c7660ec0410f':
-		print(title,'inject',charStart,charEnd,len(content),content,'\n')	
+	if title == '3a88fcd4-c3b9-4651-9921-655c2267605e':
+		print(title,index,charStart,charEnd,content)
 
-
-	#seperate
+	#separate
 	start = BeautifulSoup((content[:charStart] or ""), 'html.parser')
 	middle = content[charStart:charEnd] or ""
 	end = BeautifulSoup((content[charEnd:] or ""), 'html.parser')
 
+	#put the middle inside the popover
 	popover.string = middle
 
+	#append all elements together in harmony
 	element.contents = [start,popover,end] + element.contents[1:]
-
-	#print(len(element.contents),element.contents)
-	#if title in ['ce2887e6-9b07-4f17-bf20-079f4c3f86d8','625a92ad-4c84-4d43-baab-0563fd9ee843']:
-	#	print(f"********{title}**********")
-	#	print('elContent',index,type(element),list(element.children))
 
 
 	return soup
@@ -354,6 +345,9 @@ def get_point_coordinates_sort(bookmark):
 
 
 def get_bookmark_tag(soup, bookmark):
+	'''
+	Create soup "a" tag for the popover
+	'''
 	annotation = '<div class=\"text-small mb-3\">\"'+ bookmark.Text.replace("\"","'") + '\"</div><div class=\"fw-bold\">'+  (bookmark.Annotation or '(No comment given.)').replace("\"","'")+'</div>'
 	tag = soup.new_tag('a')
 	tag["href"] = "javascript:void(0)"
@@ -370,6 +364,9 @@ def get_bookmark_tag(soup, bookmark):
 
 
 def write_html(html,out):
+	'''
+	does what it says on the can
+	'''
 	f = open(out,'w')
 	f.write(html)
 	f.close()
