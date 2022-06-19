@@ -140,10 +140,16 @@ def add_navigation(soup):
 	<script>
 		var annotationIndex = 0;
 		const annotations = Array.from(document.querySelectorAll('.kne-annotation'));
-		console.log('annotations',annotations);
 
-		const navigate = (delta) =>{
-			annotationIndex = annotationIndex+delta;
+		annotations.map((el,i)=>{
+			
+			el.onclick = (e)=>{
+				navigate(i);
+			}
+		});
+
+		const navigate = (newIndex) =>{
+			annotationIndex = newIndex;
 			annotationIndex = annotationIndex < 0 ? annotations.length-1 : annotationIndex;
 			annotationIndex = annotationIndex >= annotations.length ? 0 : annotationIndex;
 			
@@ -158,12 +164,13 @@ def add_navigation(soup):
 				behavior: 'smooth'
 			});
 		};
+
 		document.getElementById('btn-prev').onclick = _=>{
-			navigate(-1)
+			navigate(annotationIndex-1)
 		};
 
 		document.getElementById('btn-next').onclick = _=>{
-			navigate(1)
+			navigate(annotationIndex+1)
 		};
 	</script>
 	'''
@@ -185,13 +192,16 @@ def insert_bookmark(soup,bookmark):
 			return soup
 
 		popover = get_bookmark_tag(soup,bookmark)
+		
 		if(coordinatesStart[1] == coordinatesEnd[1]):
 			soup = inject_popover(soup,coordinatesStart,coordinatesEnd,popover)
 		else:
 			soup = wrap_popover(soup,coordinatesStart,coordinatesEnd,popover)
 	except Exception as e:
-		print(e)
-		print(bookmark.Text)
+		print(f"\n ERROR INSERTING BOOKMARK {bookmark.BookmarkID}")
+		#print(bookmark.toJSON())
+		#print(e)
+		
 	return soup
 
 
@@ -204,8 +214,8 @@ def locate_content(soup,documentIndex,index):
 	documentElements = list(document.children)
 	content = documentElements[index]
 	
-	if(not isinstance(content,Tag) and len(content.strip())):
-		#we are in a liminal space, take head, move back one
+	if(len(content.strip()) == 0):
+		#we are in a liminal space, take heed, move back one
 		content = content.previous_sibling
 
 	if content.string is None:
@@ -220,6 +230,7 @@ def wrap_popover(soup,coordinatesStart,coordinatesEnd,popover):
 	#print('\twrap')
 	documentIndex, indexStart, charStart = coordinatesStart
 	_,indexEnd,charEnd = coordinatesEnd
+	
 	for i in range(0,indexEnd-indexStart+1):
 		content = locate_content(soup,documentIndex,indexEnd-i)
 		popover['class'] += ' d-block'
@@ -238,6 +249,9 @@ def inject_popover(soup,coordinatesStart,coordinatesEnd,popover):
 	start = content.string[:charStart] or ""
 	middle = content.string[charStart:charEnd] or ""
 	end = content.string[charEnd:] or ""
+
+	if(popover['title'] == 'c0b813bf-5f6f-4a4e-ae8a-111d85f46eff'):
+		print('inject',index,charStart,content)
 
 	popover.string = middle
 
