@@ -1,7 +1,7 @@
-import sqlite3,json,re
+import sqlite3,json,re,traceback
 import ebooklib
 from ebooklib import epub
-from bs4 import BeautifulSoup,Tag
+from bs4 import BeautifulSoup,Tag,NavigableString
 
 
 class Bookmark:
@@ -138,7 +138,7 @@ def add_navigation(soup):
 	<button type="button" id="btn-next" class="btn btn-sm  btn-outline-primary">Next</button>
 	</div>
 	<script>
-		var annotationIndex = 0;
+		var annotationIndex = -1;
 		const annotations = Array.from(document.querySelectorAll('.kne-annotation'));
 
 		annotations.map((el,i)=>{
@@ -199,8 +199,8 @@ def insert_bookmark(soup,bookmark):
 			soup = wrap_popover(soup,coordinatesStart,coordinatesEnd,popover)
 	except Exception as e:
 		print(f"\n ERROR INSERTING BOOKMARK {bookmark.BookmarkID}")
-		#print(bookmark.toJSON())
-		#print(e)
+		print(bookmark.toJSON())
+		print(traceback.format_exc())
 		
 	return soup
 
@@ -213,10 +213,13 @@ def locate_content(soup,documentIndex,index):
 	
 	documentElements = list(document.children)
 	content = documentElements[index]
-	
-	if(len(content.strip()) == 0):
+
+
+	if(len(str(content).strip()) == 0):
 		#we are in a liminal space, take heed, move back one
 		content = content.previous_sibling
+		print('No content. Using previous sibling.')
+		pass
 
 	if content.string is None:
 		content.string = ""
@@ -230,11 +233,14 @@ def wrap_popover(soup,coordinatesStart,coordinatesEnd,popover):
 	#print('\twrap')
 	documentIndex, indexStart, charStart = coordinatesStart
 	_,indexEnd,charEnd = coordinatesEnd
-	
+	'''
+	#creates multiple wrappers and just doesn't work well enough
 	for i in range(0,indexEnd-indexStart+1):
 		content = locate_content(soup,documentIndex,indexEnd-i)
-		popover['class'] += ' d-block'
 		content.wrap(popover)
+	'''
+	content = locate_content(soup,documentIndex,indexStart)
+	content.wrap(popover)
 	return soup
 
 
@@ -242,16 +248,22 @@ def inject_popover(soup,coordinatesStart,coordinatesEnd,popover):
 	'''
 	wraps text within element
 	'''
+	#print('\tinject')
 	documentIndex, index, charStart = coordinatesStart
 	_,_,charEnd = coordinatesEnd
-	#print('\tinject')
 	content = locate_content(soup,documentIndex,index)
+
+	if(isinstance(content,NavigableString)):
+		return wrap_popover(soup,coordinatesStart,coordinatesEnd,popover)
+
+	if(popover['title'] == 'c0b813bf-5f6f-4a4e-ae8a-111d85f46eff'):
+		print(len(list(content.children)))
+
 	start = content.string[:charStart] or ""
 	middle = content.string[charStart:charEnd] or ""
 	end = content.string[charEnd:] or ""
 
-	if(popover['title'] == 'c0b813bf-5f6f-4a4e-ae8a-111d85f46eff'):
-		print('inject',index,charStart,content)
+	
 
 	popover.string = middle
 
@@ -292,8 +304,10 @@ def get_bookmark_tag(soup, bookmark):
 	annotation = '<div class=\"text-small mb-3\">\"'+ bookmark.Text.replace("\"","\\\'") + '\"</div><div class=\"fw-bold\">'+  (bookmark.Annotation or '(No comment given.)').replace("\"","\\\'")+'</div>'
 	tag = soup.new_tag('a')
 	tag["href"] = "javascript:void(0)"
-	tag["class"] = "kne-annotation bg-warning"
+	tag["class"] = "kne-annotation bg-warning d-inline-block"
 	tag["data-bs-toggle"] ="popover"
+	tag["data-bs-placement"] ="bottom"
+	tag["data-bs-trigger"] = "focus"
 	tag["title"] = bookmark.BookmarkID
 	tag["data-title"] = bookmark.BookmarkID
 	tag["data-bs-html"] = "true"
